@@ -121,7 +121,7 @@ dagon env list production
 
 The environments are `production`, `staging`, and `preview`. Every pull request preview uses `preview`.
 
-Each value must fit on one line. Put public build-time values, such as `NEXT_PUBLIC_*` and `VITE_*`, in `deploy/build.env`. dagon does not encrypt that file, because those values end up in the browser bundle.
+Each value must fit on one line. Put public build-time values, such as `NEXT_PUBLIC_*` and `VITE_*`, in `.infra/build.env`. dagon does not encrypt that file, because those values end up in the browser bundle.
 
 If you have no age key, dagon creates one on the first run. On macOS the key is in `~/Library/Application Support/sops/age/keys.txt`. Back up that file. Without it, you cannot edit the secrets.
 

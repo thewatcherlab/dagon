@@ -344,7 +344,7 @@ func SopsConfig(userPub string, serverPubs map[string]string) string {
 	b.WriteString("# request preview cannot decrypt staging or production secrets.\n")
 	b.WriteString("creation_rules:\n")
 	for _, env := range Environments {
-		fmt.Fprintf(&b, "  - path_regex: deploy/env/%s\\.enc\\.env$\n    age: %s,%s\n", env, serverPubs[env], userPub)
+		fmt.Fprintf(&b, "  - path_regex: .infra/env/%s\\.enc\\.env$\n    age: %s,%s\n", env, serverPubs[env], userPub)
 	}
 	return b.String()
 }
@@ -353,12 +353,12 @@ func encryptSecrets(s *State) (string, error) {
 	if err := os.WriteFile(filepath.Join(s.Dir, ".sops.yaml"), []byte(SopsConfig(s.userPub, s.serverPubs)), 0o644); err != nil {
 		return "", err
 	}
-	if err := os.MkdirAll(filepath.Join(s.Dir, "deploy", "env"), 0o755); err != nil {
+	if err := os.MkdirAll(filepath.Join(s.Dir, ".infra", "env"), 0o755); err != nil {
 		return "", err
 	}
 	var created []string
 	for _, env := range Environments {
-		rel := "deploy/env/" + env + ".enc.env"
+		rel := ".infra/env/" + env + ".enc.env"
 		path := filepath.Join(s.Dir, rel)
 		if _, err := os.Stat(path); err == nil {
 			if _, err := run(s.Dir, nil, "sops", "updatekeys", "-y", rel); err != nil {

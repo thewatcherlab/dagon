@@ -11,7 +11,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 # Public values only: NEXT_PUBLIC_* are baked into the browser bundle.
-RUN set -a && if [ -f deploy/build.env ]; then . ./deploy/build.env; fi && set +a && {%.PM.Build%}
+RUN set -a && if [ -f .infra/build.env ]; then . ./.infra/build.env; fi && set +a && {%.PM.Build%}
 
 FROM node:{%.Node%}-alpine AS run
 WORKDIR /app

@@ -80,7 +80,7 @@ func TestWizardWritesFilesOnly(t *testing.T) {
 		t.Fatalf("phase %d, err %q", m.phase, m.err)
 	}
 	review := m.View().Content
-	for _, want := range []string{"create", "Dockerfile", "deploy/nginx.conf", ".github/workflows/preview.yml"} {
+	for _, want := range []string{"create", "Dockerfile", ".infra/nginx.conf", ".github/workflows/preview.yml"} {
 		if !strings.Contains(review, want) {
 			t.Errorf("review lacks %q:\n%s", want, review)
 		}
@@ -98,7 +98,7 @@ func TestWizardWritesFilesOnly(t *testing.T) {
 		t.Fatal(err)
 	}
 	done := m.View().Content
-	if !strings.Contains(done, "Set up the VPS") || !strings.Contains(done, "git add .github Dockerfile .dockerignore deploy") {
+	if !strings.Contains(done, "Set up the VPS") || !strings.Contains(done, "git add .github Dockerfile .dockerignore .infra") {
 		t.Errorf("done screen:\n%s", done)
 	}
 }

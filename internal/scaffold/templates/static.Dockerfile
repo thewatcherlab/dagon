@@ -6,9 +6,9 @@ COPY {%.PM.Copy%} ./
 RUN {%.PM.Install%}
 COPY . .
 # Public values only: everything here ends up in the browser bundle.
-RUN set -a && if [ -f deploy/build.env ]; then . ./deploy/build.env; fi && set +a && {%.PM.Build%}
+RUN set -a && if [ -f .infra/build.env ]; then . ./.infra/build.env; fi && set +a && {%.PM.Build%}
 
 FROM nginxinc/nginx-unprivileged:stable-alpine
-COPY deploy/nginx.conf /etc/nginx/conf.d/default.conf
+COPY .infra/nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /app/{%.OutputDir%} /usr/share/nginx/html
 EXPOSE 3000
