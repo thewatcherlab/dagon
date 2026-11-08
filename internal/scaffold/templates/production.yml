@@ -1,0 +1,44 @@
+# Written by dagon (https://github.com/{%.WorkflowRepo%}). Deploys v* tags to production.
+name: production
+
+on:
+  push:
+    tags: ["v*"]
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.commit.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Resolve the tag to a commit
+        id: commit
+        env:
+          REF_NAME: ${{ github.event.release.tag_name || github.ref_name }}
+        run: |
+          tag="$REF_NAME"
+          [[ "$tag" == v* ]] || exit 1
+          sha=$(git rev-parse "refs/tags/${tag}^{commit}")
+          printf '%s\n' "$sha" | grep -Eq '^[0-9a-f]{40}$'
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+  deploy:
+    needs: resolve
+    uses: {%.Uses%}
+    with:
+      slot: production
+      sha: ${{ needs.resolve.outputs.sha }}{%.With%}
+    secrets:
+      SSH_HOST: ${{ secrets.SSH_HOST }}
+      SSH_USER: ${{ secrets.SSH_USER }}
+      SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+      SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}

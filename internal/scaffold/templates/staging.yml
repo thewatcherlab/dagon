@@ -1,0 +1,22 @@
+# Written by dagon (https://github.com/{%.WorkflowRepo%}). Deploys main to staging.
+name: staging
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  deploy:
+    uses: {%.Uses%}
+    with:
+      slot: staging
+      sha: ${{ github.sha }}{%.With%}
+    secrets:
+      SSH_HOST: ${{ secrets.SSH_HOST }}
+      SSH_USER: ${{ secrets.SSH_USER }}
+      SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+      SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}

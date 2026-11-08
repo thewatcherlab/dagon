@@ -1,0 +1,34 @@
+# Written by dagon (https://github.com/{%.WorkflowRepo%}). Run it from the
+# Actions tab or with `dagon rollback <slot>`. Each run steps one release back.
+name: rollback
+
+on:
+  workflow_dispatch:
+    inputs:
+      slot:
+        description: Environment to roll back
+        type: choice
+        options: [production, staging]
+        default: production
+      sha:
+        description: Commit to restore. Leave empty for the release before the one serving now.
+        type: string
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  rollback:
+    uses: {%.Uses%}
+    with:
+      slot: ${{ inputs.slot }}
+      sha: ${{ inputs.sha }}
+      command: rollback{%.With%}
+    secrets:
+      SSH_HOST: ${{ secrets.SSH_HOST }}
+      SSH_USER: ${{ secrets.SSH_USER }}
+      SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+      SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}

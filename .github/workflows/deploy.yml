@@ -1,0 +1,182 @@
+# Reusable deploy workflow. Apps call it from the workflows that `dagon init`
+# writes; see README.md. It builds the app's Docker image, pushes it to GHCR,
+# and asks the VPS to run it.
+name: dagon deploy
+
+on:
+  workflow_call:
+    inputs:
+      slot:
+        description: staging, production, or pr-<number>
+        required: true
+        type: string
+      sha:
+        description: The commit to deploy. For rollback, empty means the release before the one serving now. Not used by remove.
+        required: false
+        type: string
+        default: ""
+      command:
+        description: deploy, rollback, or remove. Only staging and production roll back, and only previews can be removed.
+        required: false
+        type: string
+        default: deploy
+      dockerfile:
+        description: Path of the Dockerfile, relative to the repository.
+        required: false
+        type: string
+        default: Dockerfile
+      context:
+        description: Docker build context, relative to the repository.
+        required: false
+        type: string
+        default: .
+    secrets:
+      SSH_HOST:
+        required: true
+      SSH_USER:
+        required: true
+      SSH_PRIVATE_KEY:
+        required: true
+      SSH_KNOWN_HOSTS:
+        required: true
+    outputs:
+      line:
+        description: The line the VPS printed, such as "published pr-12 <sha> https://pr-12.example.com".
+        value: ${{ jobs.deploy.outputs.line }}
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    if: inputs.command == 'deploy' || inputs.command == 'rollback'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      sha: ${{ steps.target.outputs.sha }}
+    steps:
+      - name: Pick the commit
+        id: target
+        env:
+          COMMAND: ${{ inputs.command }}
+          SLOT: ${{ inputs.slot }}
+          SHA: ${{ inputs.sha }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+        run: |
+          if [[ "$COMMAND" == "rollback" ]]; then
+            printf '%s\n' "$SLOT" | grep -Eq '^(staging|production)$' || exit 2
+          else
+            printf '%s\n' "$SLOT" | grep -Eq '^(staging|production|pr-[1-9][0-9]{0,5})$' || exit 2
+          fi
+          if [[ "$COMMAND" == "rollback" && -z "$SHA" ]]; then
+            umask 077
+            printf '%s\n' "$SSH_PRIVATE_KEY" > "$RUNNER_TEMP/actions_key"
+            printf '%s\n' "$SSH_KNOWN_HOSTS" > "$RUNNER_TEMP/known_hosts"
+            SHA=$(ssh -i "$RUNNER_TEMP/actions_key" -o IdentitiesOnly=yes -o BatchMode=yes \
+              -o UserKnownHostsFile="$RUNNER_TEMP/known_hosts" "$SSH_USER@$SSH_HOST" previous "$SLOT" < /dev/null)
+            rm -f "$RUNNER_TEMP/actions_key"
+          fi
+          printf '%s\n' "$SHA" | grep -Eq '^[0-9a-f]{40}$' || exit 2
+          echo "Deploying $SHA to $SLOT"
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.target.outputs.sha }}
+          persist-credentials: false
+      - name: Build and push the image
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ACTOR: ${{ github.actor }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ steps.target.outputs.sha }}
+          DOCKERFILE: ${{ inputs.dockerfile }}
+          CONTEXT: ${{ inputs.context }}
+        run: |
+          image="ghcr.io/${REPO,,}:$SHA"
+          printf '%s' "$GH_TOKEN" | docker login ghcr.io -u "$ACTOR" --password-stdin
+          if docker manifest inspect "$image" >/dev/null 2>&1; then
+            echo "$image is already built"
+            exit 0
+          fi
+          docker build --pull -f "$DOCKERFILE" \
+            --label "org.opencontainers.image.source=https://github.com/$REPO" \
+            --label "org.opencontainers.image.revision=$SHA" \
+            -t "$image" "$CONTEXT"
+          docker push "$image"
+
+  deploy:
+    needs: build
+    if: ${{ !cancelled() && (inputs.command == 'remove' || needs.build.result == 'success') }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    concurrency:
+      group: dagon-${{ inputs.slot }}
+      cancel-in-progress: false
+    outputs:
+      line: ${{ steps.run.outputs.line }}
+    steps:
+      - name: Check the inputs
+        env:
+          COMMAND: ${{ inputs.command }}
+          SLOT: ${{ inputs.slot }}
+          SHA: ${{ needs.build.outputs.sha }}
+        run: |
+          case "$COMMAND" in
+            deploy|rollback) printf '%s\n' "$SHA" | grep -Eq '^[0-9a-f]{40}$' || exit 2 ;;
+            remove) printf '%s\n' "$SLOT" | grep -Eq '^pr-[1-9][0-9]{0,5}$' || exit 2 ;;
+            *) exit 2 ;;
+          esac
+      - uses: actions/checkout@v4
+        if: inputs.command != 'remove'
+        with:
+          ref: ${{ needs.build.outputs.sha }}
+          persist-credentials: false
+          sparse-checkout: deploy/env
+      - name: Deploy
+        id: run
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+          GH_TOKEN: ${{ github.token }}
+          ACTOR: ${{ github.actor }}
+          COMMAND: ${{ inputs.command }}
+          SLOT: ${{ inputs.slot }}
+          SHA: ${{ needs.build.outputs.sha }}
+        run: |
+          umask 077
+          keyfile="$RUNNER_TEMP/actions_key"
+          hosts="$RUNNER_TEMP/known_hosts"
+          printf '%s\n' "$SSH_PRIVATE_KEY" > "$keyfile"
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > "$hosts"
+          remote() {
+            ssh -i "$keyfile" -o IdentitiesOnly=yes -o BatchMode=yes -o UserKnownHostsFile="$hosts" "$SSH_USER@$SSH_HOST" "$@"
+          }
+          set +e
+          if [[ "$COMMAND" == "remove" ]]; then
+            line=$(remote remove "$SLOT" < /dev/null)
+          else
+            case "$SLOT" in
+              pr-*) env=preview ;;
+              *) env=$SLOT ;;
+            esac
+            line=$({
+              printf '%s %s\n' "$ACTOR" "$GH_TOKEN"
+              if [[ -f "deploy/env/$env.enc.env" ]]; then cat "deploy/env/$env.enc.env"; fi
+            } | if [[ "$COMMAND" == "rollback" ]]; then remote deploy "$SLOT" "$SHA" rollback; else remote deploy "$SLOT" "$SHA"; fi)
+          fi
+          code=$?
+          set -e
+          rm -f "$keyfile"
+          printf '%s\n' "$line"
+          echo "line=$line" >> "$GITHUB_OUTPUT"
+          exit "$code"

@@ -1,0 +1,16 @@
+# Written by dagon. Keeps secrets and local files out of the image.
+.git
+.github
+node_modules
+.next
+dist
+build
+.output
+.nuxt
+.svelte-kit
+npm-debug.log*
+.env*
+deploy/env
+.sops.yaml
+Dockerfile
+.dockerignore

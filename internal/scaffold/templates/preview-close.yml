@@ -1,0 +1,23 @@
+# Written by dagon (https://github.com/{%.WorkflowRepo%}). Removes a preview
+# when its pull request closes.
+name: preview-close
+
+on:
+  pull_request_target:
+    types: [closed]
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  remove:
+    uses: {%.Uses%}
+    with:
+      slot: pr-${{ github.event.pull_request.number }}
+      command: remove
+    secrets:
+      SSH_HOST: ${{ secrets.SSH_HOST }}
+      SSH_USER: ${{ secrets.SSH_USER }}
+      SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+      SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
