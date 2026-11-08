@@ -106,7 +106,7 @@ func TestDetectViteWithPnpm(t *testing.T) {
 			t.Errorf("Dockerfile lacks %q:\n%s", want, df)
 		}
 	}
-	if !strings.Contains(file(t, files, "deploy/nginx.conf"), "listen 3000;") {
+	if !strings.Contains(file(t, files, ".infra/nginx.conf"), "listen 3000;") {
 		t.Error("nginx does not listen on 3000")
 	}
 }
@@ -208,7 +208,7 @@ func TestWriteKeepsUserFiles(t *testing.T) {
 	for i, f := range files {
 		got[f.Path] = actions[i]
 	}
-	if got["Dockerfile"] != Kept || got[".github/workflows/staging.yml"] != Update || got["deploy/build.env"] != Create {
+	if got["Dockerfile"] != Kept || got[".github/workflows/staging.yml"] != Update || got[".infra/build.env"] != Create {
 		t.Fatalf("got %v", got)
 	}
 	if b, _ := os.ReadFile(filepath.Join(dir, "Dockerfile")); string(b) != "FROM mine\n" {

@@ -83,7 +83,7 @@ func TestSetupEndToEnd(t *testing.T) {
 		"gh secret SSH_USER=deploy",
 		"gh secret SSH_PRIVATE_KEY=PRIVATE",
 		"gh secret SSH_KNOWN_HOSTS=203.0.113.10 ssh-ed25519 AAAAhost",
-		"sops encrypt --in-place deploy/env/preview.enc.env",
+		"sops encrypt --in-place .infra/env/preview.enc.env",
 	} {
 		if !strings.Contains(got, want) {
 			t.Errorf("log lacks %q\n%s", want, got)
@@ -95,15 +95,15 @@ func TestSetupEndToEnd(t *testing.T) {
 
 	sops, _ := os.ReadFile(filepath.Join(dir, ".sops.yaml"))
 	for _, want := range []string{
-		"deploy/env/production\\.enc\\.env$\n    age: age1prod,age1user",
-		"deploy/env/staging\\.enc\\.env$\n    age: age1stag,age1user",
-		"deploy/env/preview\\.enc\\.env$\n    age: age1prev,age1user",
+		".infra/env/production\\.enc\\.env$\n    age: age1prod,age1user",
+		".infra/env/staging\\.enc\\.env$\n    age: age1stag,age1user",
+		".infra/env/preview\\.enc\\.env$\n    age: age1prev,age1user",
 	} {
 		if !strings.Contains(string(sops), want) {
 			t.Errorf(".sops.yaml lacks %q\n%s", want, sops)
 		}
 	}
-	env, _ := os.ReadFile(filepath.Join(dir, "deploy/env/staging.enc.env"))
+	env, _ := os.ReadFile(filepath.Join(dir, ".infra/env/staging.enc.env"))
 	if string(env) != "ENC[APP_ENV=staging]\n" {
 		t.Errorf("staging env %q", env)
 	}
@@ -121,7 +121,7 @@ func TestSetupEndToEnd(t *testing.T) {
 	if strings.Contains(string(log), "ssh-keygen") || strings.Contains(string(log), "sops encrypt") {
 		t.Errorf("second run made new keys or files:\n%s", log)
 	}
-	if !strings.Contains(string(log), "sops updatekeys -y deploy/env/production.enc.env") {
+	if !strings.Contains(string(log), "sops updatekeys -y .infra/env/production.enc.env") {
 		t.Errorf("second run did not update keys:\n%s", log)
 	}
 	if len(s.Notes) != 0 {

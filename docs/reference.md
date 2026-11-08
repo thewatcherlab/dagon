@@ -7,8 +7,8 @@
 | `dagon [init] [--workflow <ref>] [dir]` | Runs the setup wizard for the project in `dir`. The default `dir` is the current directory. |
 | `dagon setup [--host <host>] [--user <user>] [--apex <domain>] [--app <name>] [dir]` | Prepares the VPS, the GitHub secrets, and the encrypted secret files with no questions. Each flag defaults to the value from the last run. `--app` defaults to the name of the `origin` repository. |
 | `dagon rollback <slot> [sha]` | Starts the `rollback` workflow for `production` or `staging`. Without `sha`, the VPS picks the release before the one that serves now. |
-| `dagon env edit <env>` | Opens `deploy/env/<env>.enc.env` in sops. |
-| `dagon env list <env>` | Prints the variable names in `deploy/env/<env>.enc.env`. |
+| `dagon env edit <env>` | Opens `.infra/env/<env>.enc.env` in sops. |
+| `dagon env list <env>` | Prints the variable names in `.infra/env/<env>.enc.env`. |
 | `dagon server-script` | Prints the script that dagon installs on the VPS. |
 | `dagon version` | Prints the version. |
 
@@ -28,11 +28,11 @@ An app name has 2 to 40 characters. It uses lowercase letters, digits, and dashe
 | `.github/workflows/preview-close.yml` | Always | Removes the preview when its pull request closes. |
 | `.github/workflows/rollback.yml` | Always | Rolls `production` or `staging` back. Runs from the Actions tab or `dagon rollback`. |
 | `Dockerfile` | If missing, and the framework is not **My own Dockerfile** | Builds the app image. |
-| `.dockerignore` | If missing, same condition as `Dockerfile` | Keeps `.env*`, `deploy/env`, and `.git` out of the image. |
-| `deploy/nginx.conf` | If missing, static sites only | Serves the build on port 3000 and falls back to `index.html`. |
-| `deploy/build.env` | If missing | Public build-time values. Not encrypted. |
-| `.sops.yaml` | On setup | Maps each `deploy/env/<env>.enc.env` to your age key and that environment's server key. |
-| `deploy/env/<env>.enc.env` | On setup, if missing | Encrypted secrets for one environment. The first version holds `APP_ENV=<env>`. |
+| `.dockerignore` | If missing, same condition as `Dockerfile` | Keeps `.env*`, `.infra/env`, and `.git` out of the image. |
+| `.infra/nginx.conf` | If missing, static sites only | Serves the build on port 3000 and falls back to `index.html`. |
+| `.infra/build.env` | If missing | Public build-time values. Not encrypted. |
+| `.sops.yaml` | On setup | Maps each `.infra/env/<env>.enc.env` to your age key and that environment's server key. |
+| `.infra/env/<env>.enc.env` | On setup, if missing | Encrypted secrets for one environment. The first version holds `APP_ENV=<env>`. |
 
 dagon overwrites the five workflows on every run. It never overwrites the other files. A second setup run re-encrypts the existing secret files for the current keys with `sops updatekeys`.
 
@@ -56,7 +56,7 @@ The default build output is `build` for `react-scripts` and `@sveltejs/adapter-s
 
 The generated Dockerfile does not support Bun. Choose **My own Dockerfile** for a Bun project.
 
-Every generated Dockerfile loads `deploy/build.env` into the environment before the build.
+Every generated Dockerfile loads `.infra/build.env` into the environment before the build.
 
 ## Container contract
 

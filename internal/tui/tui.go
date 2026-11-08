@@ -555,7 +555,7 @@ func (m *Model) viewReview(b *strings.Builder) {
 		b.WriteString("  install Docker, Caddy, and sops, and register app " + c.App + "\n")
 		b.WriteString("  replace /etc/caddy/Caddyfile with one that imports sites/ (a backup is kept)\n\n")
 		b.WriteString(label.Render("In this repository and on GitHub") + "\n")
-		b.WriteString("  write .sops.yaml and deploy/env/*.enc.env\n")
+		b.WriteString("  write .sops.yaml and .infra/env/*.enc.env\n")
 		b.WriteString("  set the SSH_HOST, SSH_USER, SSH_PRIVATE_KEY, and SSH_KNOWN_HOSTS secrets\n\n")
 		b.WriteString(label.Render("URLs") + "\n")
 		for _, slot := range []string{"production", "staging"} {

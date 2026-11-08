@@ -1,5 +1,5 @@
 // Package scaffold detects a frontend project and writes the files that let
-// dagon deploy it: the caller workflows, a Dockerfile, and deploy/.
+// dagon deploy it: the caller workflows, a Dockerfile, and .infra/.
 package scaffold
 
 import (
@@ -332,10 +332,10 @@ func (p Project) Files() ([]File, error) {
 	}
 	if p.Framework == Static {
 		b, _ := templates.ReadFile("templates/nginx.conf")
-		files = append(files, File{Path: "deploy/nginx.conf", Content: b, Policy: Keep})
+		files = append(files, File{Path: ".infra/nginx.conf", Content: b, Policy: Keep})
 	}
 	env, _ := templates.ReadFile("templates/build.env")
-	files = append(files, File{Path: "deploy/build.env", Content: env, Policy: Keep})
+	files = append(files, File{Path: ".infra/build.env", Content: env, Policy: Keep})
 	return files, nil
 }
 

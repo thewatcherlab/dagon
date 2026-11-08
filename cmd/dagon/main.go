@@ -180,7 +180,7 @@ func setupCmd(args []string) error {
 		fmt.Printf("%s https://%s\n", slot, setup.Hostname(slot, c.Apex))
 	}
 	fmt.Printf("preview https://pr-<number>.%s\n", c.Apex)
-	fmt.Fprintln(os.Stderr, "Commit .sops.yaml and deploy/ so GitHub can deploy with them.")
+	fmt.Fprintln(os.Stderr, "Commit .sops.yaml and .infra/ so GitHub can deploy with them.")
 	return nil
 }
 
@@ -205,7 +205,7 @@ func envCmd(args []string) error {
 	if err != nil {
 		return err
 	}
-	rel := "deploy/env/" + env + ".enc.env"
+	rel := ".infra/env/" + env + ".enc.env"
 	if _, err := os.Stat(filepath.Join(root, rel)); err != nil {
 		return fmt.Errorf("missing %s; run dagon init first", rel)
 	}

@@ -10,7 +10,7 @@ build
 .svelte-kit
 npm-debug.log*
 .env*
-deploy/env
+.infra/env
 .sops.yaml
 Dockerfile
 .dockerignore
