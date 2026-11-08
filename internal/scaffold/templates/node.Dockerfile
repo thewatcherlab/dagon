@@ -6,7 +6,6 @@ COPY {%.PM.Copy%} ./
 RUN {%.PM.Install%}
 COPY . .
 {%- if .HasBuild%}
-# Public values only: anything a client bundle reads ends up in the browser.
 RUN set -a && if [ -f .infra/build.env ]; then . ./.infra/build.env; fi && set +a && {%.PM.Build%}
 {%- end%}
 {%- if .PM.Prune%}

@@ -340,8 +340,6 @@ func install(s *State) (string, error) {
 // SopsConfig is .sops.yaml: each file is readable by you and one server key.
 func SopsConfig(userPub string, serverPubs map[string]string) string {
 	var b strings.Builder
-	b.WriteString("# Written by dagon. Each environment has its own server key, so a pull\n")
-	b.WriteString("# request preview cannot decrypt staging or production secrets.\n")
 	b.WriteString("creation_rules:\n")
 	for _, env := range Environments {
 		fmt.Fprintf(&b, "  - path_regex: .infra/env/%s\\.enc\\.env$\n    age: %s,%s\n", env, serverPubs[env], userPub)
