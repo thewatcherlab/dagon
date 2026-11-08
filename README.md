@@ -1,12 +1,14 @@
 # dagon
 
-dagon deploys a frontend app from GitHub to a VPS that you run. Each app gets three kinds of deploys:
+Deploy a frontend from GitHub to your own VPS.
+
+Each app gets three kinds of deploys:
 
 - A pull request preview at `https://pr-<number>.<domain>` when someone comments `/deploy`. The preview lasts 24 hours after its last deploy.
 - Staging at `https://staging.<domain>` on every push to `main`.
 - Production at `https://<domain>` on every `v*` tag.
 
-GitHub Actions builds a Docker image for each commit and pushes it to the GitHub container registry. The VPS pulls the image, runs it as a container, and serves it over HTTPS with Caddy. Secrets live in your repository, encrypted with sops and age, so that only you and the VPS can decrypt them. One VPS can host many apps.
+GitHub Actions builds a Docker image for each commit and pushes it to the GitHub container registry. The VPS pulls the image, runs it as a container, and serves it over HTTPS with Caddy. Secrets live in your repository, encrypted with sops and age. Only you and the VPS can decrypt them. One VPS can host many apps.
 
 dagon writes a Dockerfile for Next.js, for static sites, and for Node servers. Any other project works if it brings its own Dockerfile.
 
