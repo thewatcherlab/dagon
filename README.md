@@ -111,19 +111,9 @@ A rollback restores the image and the secrets file of that commit. If you change
 dagon env edit production
 ```
 
-sops opens the decrypted file in `$EDITOR` and encrypts it again when you save. Commit the file and deploy. The container gets the new values on the next deploy of that environment.
+sops opens the decrypted file in `$EDITOR`. Commit the file and deploy that environment.
 
-To print only the variable names:
-
-```bash
-dagon env list production
-```
-
-The environments are `production`, `staging`, and `preview`. Every pull request preview uses `preview`.
-
-Each value must fit on one line. Put public build-time values, such as `NEXT_PUBLIC_*` and `VITE_*`, in `.infra/build.env`. dagon does not encrypt that file, because those values end up in the browser bundle.
-
-If you have no age key, dagon creates one on the first run. On macOS the key is in `~/Library/Application Support/sops/age/keys.txt`. Back up that file. Without it, you cannot edit the secrets.
+For listing names, editing with sops and age without dagon, age key paths, and `.infra/` layout, see [Manage infra and secrets](docs/infra.md).
 
 ## Bring your own Dockerfile
 
@@ -134,7 +124,7 @@ Choose **My own Dockerfile** in the wizard and give its path. The image must fol
 
 ## Add another app to the same VPS
 
-Run dagon in the other app's repository and give it a different domain. dagon refuses a domain that another app on the VPS already uses.
+Run dagon in the other app's repository with a different domain. dagon refuses a domain that another app on the VPS already uses. For the shared versus per-app checklist, DNS, and apex conflicts, see [Add another app on the same VPS](docs/infra.md#add-another-app-on-the-same-vps).
 
 ## Debug a failed deploy
 
@@ -148,6 +138,7 @@ If a `dagon` step fails on your machine, dagon prints the step and the last line
 
 ## Learn more
 
+- [Manage infra and secrets](docs/infra.md) shows what is in `.infra/`, how to edit env with `dagon env` or sops and age, and how to host another app on the same VPS.
 - [Reference](docs/reference.md) lists the commands, the files dagon writes, the workflow inputs, and the paths on the VPS.
 - [How dagon works](docs/how-it-works.md) explains the deploy flow and how dagon keeps apps and secrets apart.
 

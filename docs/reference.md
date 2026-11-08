@@ -12,7 +12,7 @@
 | `dagon server-script` | Prints the script that dagon installs on the VPS. |
 | `dagon version` | Prints the version. |
 
-`<env>` is `production`, `staging`, or `preview`.
+`<env>` is `production`, `staging`, or `preview`. To edit secrets step by step, see [Manage infra and secrets](infra.md).
 
 `--workflow` sets the reusable workflow that the generated workflows call. The default is `thewatcherlab/dagon/.github/workflows/deploy.yml@main`.
 
